@@ -1,0 +1,55 @@
+version: "3.9"
+
+services:
+  api-gateway:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      PG_HOST: postgres
+      PG_PORT: 5432
+      PG_USER: legalintel
+      PG_PASSWORD: legalintel
+      PG_DATABASE: legal_intelligence_platform
+      NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: neo4j
+      NEO4J_PASSWORD: neo4j_password
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      LEGALINTEL_API_KEYS: ${LEGALINTEL_API_KEYS:-demo-attorney:attorney:demo-key-change-me}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    depends_on:
+      - postgres
+      - redis
+      - neo4j
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: legalintel
+      POSTGRES_PASSWORD: legalintel
+      POSTGRES_DB: legal_intelligence_platform
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+  neo4j:
+    image: neo4j:5-community
+    environment:
+      NEO4J_AUTH: neo4j/neo4j_password
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - neo4j_data:/data
+
+volumes:
+  postgres_data:
+  neo4j_data:

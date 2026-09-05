@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Legal Intelligence — Compliance Console</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+  window.LEGALINTEL_API_URL = (window.location.protocol === "file:" || window.location.port === "5500")
+    ? "http://localhost:8000"
+    : window.location.origin;
+  window.LEGALINTEL_API_KEY = "MyFixedKey123";
+</script>
+<style>
+:root {
+  --bg: #0B0F1A;
+  --panel: #131826;
+  --panel-border: #232B3D;
+  --text-primary: #E8EAF0;
+  --text-muted: #8891A3;
+  --gold: #C9A227;
+  --blue: #4C8DFF;
+  --green: #34D399;
+  --red: #FF5C6C;
+  --mono: 'JetBrains Mono', 'SFMono-Regular', Consolas, monospace;
+  --sans: 'Inter', -apple-system, sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text-primary);
+  font-family: var(--sans);
+  min-height: 100vh;
+  padding: 0 0 48px 0;
+}
+.pulse-bar {
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  background-size: 200% 100%;
+  animation: pulse-move 3.6s linear infinite;
+}
+@keyframes pulse-move {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+header {
+  padding: 28px 40px 20px 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  border-bottom: 1px solid var(--panel-border);
+}
+.brand-eyebrow {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 2px;
+  color: var(--gold);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+h1 {
+  font-size: 26px;
+  font-weight: 700;
+  letter-spacing: -0.3px;
+}
+.status-chip {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--green);
+  border: 1px solid rgba(52, 211, 153, 0.35);
+  background: rgba(52, 211, 153, 0.08);
+  padding: 6px 12px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+}
+main {
+  padding: 28px 40px;
+  display: grid;
+  grid-template-columns: repeat(12, 1fr);
+  gap: 20px;
+}
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--panel-border);
+  border-radius: 10px;
+  padding: 20px;
+}
+.panel-title {
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  margin-bottom: 14px;
+}
+.span-2 { grid-column: span 2; }
+.span-3 { grid-column: span 3; }
+.span-4 { grid-column: span 4; }
+.span-5 { grid-column: span 5; }
+.span-6 { grid-column: span 6; }
+.span-7 { grid-column: span 7; }
+.span-12 { grid-column: span 12; }
+.score-display {
+  font-family: var(--mono);
+  font-size: 48px;
+  font-weight: 700;
+  line-height: 1;
+}
+.score-sub { color: var(--text-muted); font-size: 12px; margin-top: 8px; }
+.metric-row { display: flex; justify-content: space-between; align-items: center; padding: 9px 0; border-bottom: 1px solid var(--panel-border); }
+.metric-row:last-child { border-bottom: none; }
+.metric-label { font-size: 13px; color: var(--text-muted); }
+.metric-value { font-family: var(--mono); font-size: 14px; }
+.badge {
+  font-family: var(--mono);
+  font-size: 10px;
+  padding: 3px 8px;
+  border-radius: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.badge-critical { background: rgba(255, 92, 108, 0.15); color: var(--red); }
+.badge-high { background: rgba(201, 162, 39, 0.15); color: var(--gold); }
+.badge-medium { background: rgba(76, 141, 255, 0.15); color: var(--blue); }
+.badge-low { background: rgba(136, 145, 163, 0.15); color: var(--text-muted); }
+.alert-item {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--panel-border);
+}
+.alert-item:last-child { border-bottom: none; }
+.alert-msg { font-size: 13px; margin-top: 6px; line-height: 1.5; }
+.alert-meta { display: flex; justify-content: space-between; align-items: center; }
+.alert-time { font-family: var(--mono); font-size: 11px; color: var(--text-muted); }
+canvas { max-height: 260px; }
+.copilot-input-row { display: flex; gap: 10px; margin-top: 14px; }
+.copilot-input-row input {
+  flex: 1;
+  background: #0D1220;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 10px 12px;
+  color: var(--text-primary);
+  font-family: var(--sans);
+  font-size: 13px;
+}
+.copilot-input-row button {
+  background: var(--gold);
+  color: #14110A;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+}
+.copilot-answer {
+  margin-top: 14px;
+  font-size: 13px;
+  color: var(--text-primary);
+  line-height: 1.6;
+  border-left: 2px solid var(--gold);
+  padding-left: 12px;
+  min-height: 20px;
+}
+</style>
+</head>
+<body>
+<div class="pulse-bar"></div>
+<header>
+  <div>
+    <div class="brand-eyebrow">AI-234 · Legal Intelligence Platform</div>
+    <h1>Compliance Console</h1>
+  </div>
+  <div class="status-chip"><span class="status-dot"></span> All Systems Nominal</div>
+</header>
+
+<main>
+  <section class="panel span-2">
+    <div class="panel-title">Legal Health Score</div>
+    <div class="score-display" id="healthScore" style="color: var(--green); font-size:34px;">--</div>
+    <div class="score-sub" id="healthScoreSub" style="font-size:10px;">Calculating...</div>
+  </section>
+
+  <section class="panel span-2">
+    <div class="panel-title">Active Contracts</div>
+    <div class="score-display" id="activeContracts" style="color: var(--blue); font-size:34px;">--</div>
+    <div class="score-sub" style="font-size:10px;">across all departments</div>
+  </section>
+
+  <section class="panel span-2">
+    <div class="panel-title">Compliance Rate</div>
+    <div class="score-display" id="complianceRate" style="color: var(--blue); font-size:34px;">--</div>
+    <div class="score-sub" style="font-size:10px;">across all frameworks</div>
+  </section>
+
+  <section class="panel span-2">
+    <div class="panel-title">Expiring Contracts</div>
+    <div class="score-display" id="expiringContracts" style="color: var(--gold); font-size:34px;">--</div>
+    <div class="score-sub" style="font-size:10px;">within 60 days</div>
+  </section>
+
+  <section class="panel span-2">
+    <div class="panel-title">Vendor Risk Score</div>
+    <div class="score-display" id="vendorRiskScore" style="color: var(--red); font-size:34px;">--</div>
+    <div class="score-sub" style="font-size:10px;">highest exposure vendor</div>
+  </section>
+
+  <section class="panel span-2">
+    <div class="panel-title">Active Alerts</div>
+    <div class="score-display" id="alertCount" style="color: var(--red); font-size:34px;">--</div>
+    <div class="score-sub" id="alertCountSub" style="font-size:10px;">across all severities</div>
+  </section>
+
+  <section class="panel span-7">
+    <div class="panel-title">Risk Distribution — Top Contracts</div>
+    <canvas id="riskChart"></canvas>
+  </section>
+
+  <section class="panel span-5">
+    <div class="panel-title">High-Risk Contracts</div>
+    <div id="riskList"></div>
+  </section>
+
+  <section class="panel span-5">
+    <div class="panel-title">Compliance by Framework</div>
+    <canvas id="complianceChart"></canvas>
+  </section>
+
+  <section class="panel span-6">
+    <div class="panel-title">Legal Workload by Department</div>
+    <canvas id="workloadChart"></canvas>
+  </section>
+
+  <section class="panel span-6">
+    <div class="panel-title">AI Recommendations</div>
+    <div id="recommendationsList"></div>
+  </section>
+
+  <section class="panel span-7">
+    <div class="panel-title">Alert Center</div>
+    <div id="alertList"></div>
+  </section>
+
+  <section class="panel span-12">
+    <div class="panel-title">AI Legal Copilot</div>
+    <div class="copilot-input-row">
+      <input id="copilotInput" type="text" placeholder="Which contracts violate company policy?" />
+      <button onclick="askCopilot()">Ask</button>
+    </div>
+    <div class="copilot-answer" id="copilotAnswer">Ask the copilot to summarize contracts, compare agreements, highlight risk, or check compliance.</div>
+  </section>
+</main>
+
+<script>
+function seededRandom(seed) {
+  let s = seed;
+  return function() {
+    s = (s * 9301 + 49297) % 233280;
+    return s / 233280;
+  };
+}
+const rand = seededRandom(77);
+
+function renderHealthScore() {
+  const score = Math.round(72 + rand() * 20);
+  const el = document.getElementById('healthScore');
+  el.textContent = score;
+  el.style.color = score > 85 ? 'var(--green)' : score > 65 ? 'var(--gold)' : 'var(--red)';
+  document.getElementById('healthScoreSub').textContent = score > 85 ? 'Portfolio in good standing' : 'Review flagged contracts';
+}
+
+function renderComplianceRate() {
+  const rate = Math.round(80 + rand() * 15);
+  document.getElementById('complianceRate').textContent = rate + '%';
+}
+
+function renderExpiringContracts() {
+  const count = Math.round(8 + rand() * 20);
+  document.getElementById('expiringContracts').textContent = count;
+}
+
+function renderRiskChart() {
+  const labels = ['DOC-0000042','DOC-0000117','DOC-0000203','DOC-0000318','DOC-0000455','DOC-0000512'];
+  const scores = labels.map(() => Math.round((0.3 + rand() * 0.65) * 100));
+
+  const ctx = document.getElementById('riskChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Risk Score (%)',
+        data: scores,
+        backgroundColor: scores.map(s => s > 75 ? '#FF5C6C' : s > 50 ? '#C9A227' : '#4C8DFF'),
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8891A3', font: { size: 10 } }, grid: { display: false } },
+        y: { ticks: { color: '#8891A3' }, grid: { color: '#232B3D' }, max: 100 },
+      }
+    }
+  });
+}
+
+function renderComplianceChart() {
+  const labels = ['GDPR', 'SOX', 'HIPAA', 'Procurement', 'Anti-Bribery'];
+  const rates = labels.map(() => Math.round(65 + rand() * 30));
+
+  const ctx = document.getElementById('complianceChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Compliance Rate (%)',
+        data: rates,
+        backgroundColor: '#4C8DFF',
+      }]
+    },
+    options: {
+      indexAxis: 'y',
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8891A3' }, grid: { color: '#232B3D' }, max: 100 },
+        y: { ticks: { color: '#8891A3', font: { size: 11 } }, grid: { display: false } },
+      }
+    }
+  });
+}
+
+function renderRiskList() {
+  const contracts = [
+    { code: 'DOC-0000042', score: 0.87, level: 'critical', factor: 'unlimited liability' },
+    { code: 'DOC-0000117', score: 0.71, level: 'high', factor: 'ambiguous language' },
+    { code: 'DOC-0000203', score: 0.58, level: 'high', factor: 'missing liability cap' },
+    { code: 'DOC-0000318', score: 0.41, level: 'medium', factor: 'missing clauses' },
+    { code: 'DOC-0000455', score: 0.22, level: 'low', factor: 'within normal range' },
+  ];
+  const container = document.getElementById('riskList');
+  container.innerHTML = contracts.map(c => `
+    <div class="metric-row">
+      <div>
+        <div class="metric-label">${c.code}</div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:2px;">${c.factor}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="metric-value">${(c.score*100).toFixed(0)}%</div>
+        <span class="badge badge-${c.level}">${c.level}</span>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderAlerts() {
+  const alerts = [
+    { type: 'Contract Expiry', severity: 'critical', msg: 'DOC-0000042 expires in 12 days, renewal decision required.', time: '4 min ago' },
+    { type: 'Compliance Issue', severity: 'high', msg: 'DOC-0000117 fails GDPR compliance, missing data retention limit clause.', time: '19 min ago' },
+    { type: 'Vendor Risk', severity: 'medium', msg: 'VENDOR-07 total contract exposure exceeds $500,000 threshold.', time: '33 min ago' },
+    { type: 'Missing Clause', severity: 'medium', msg: 'DOC-0000318 is missing a standard liability cap clause.', time: '51 min ago' },
+    { type: 'Regulatory Change', severity: 'high', msg: 'GDPR data retention requirements updated, effective in 45 days.', time: '1 hr ago' },
+  ];
+  const total = alerts.length;
+  document.getElementById('alertCount').textContent = total;
+  const critical = alerts.filter(a => a.severity === 'critical').length;
+  document.getElementById('alertCountSub').textContent = `${critical} critical, ${total - critical} other`;
+
+  const container = document.getElementById('alertList');
+  container.innerHTML = alerts.map(a => `
+    <div class="alert-item">
+      <div class="alert-meta">
+        <span class="badge badge-${a.severity}">${a.type}</span>
+        <span class="alert-time">${a.time}</span>
+      </div>
+      <div class="alert-msg">${a.msg}</div>
+    </div>
+  `).join('');
+}
+
+function renderActiveContracts() {
+  const count = Math.round(1200 + rand() * 400);
+  document.getElementById('activeContracts').textContent = count.toLocaleString();
+}
+
+function renderVendorRiskScore() {
+  const score = Math.round(40 + rand() * 55);
+  const el = document.getElementById('vendorRiskScore');
+  el.textContent = score;
+  el.style.color = score > 75 ? 'var(--red)' : score > 50 ? 'var(--gold)' : 'var(--green)';
+}
+
+function renderWorkloadChart() {
+  const labels = ['Corporate Legal', 'Procurement', 'HR', 'IP & Patents', 'Compliance', 'Litigation'];
+  const openMatters = labels.map(() => Math.round(15 + rand() * 60));
+
+  const ctx = document.getElementById('workloadChart').getContext('2d');
+  new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels,
+      datasets: [{
+        label: 'Open Matters',
+        data: openMatters,
+        backgroundColor: '#C9A227',
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8891A3', font: { size: 9 } }, grid: { display: false } },
+        y: { ticks: { color: '#8891A3' }, grid: { color: '#232B3D' } },
+      }
+    }
+  });
+}
+
+function renderRecommendations() {
+  const recommendations = [
+    { text: 'Renegotiate liability cap on DOC-0000042 before renewal window closes', priority: 'high' },
+    { text: 'Standardize confidentiality term length across NDA templates (currently 3-7 years)', priority: 'medium' },
+    { text: 'Consolidate 3 duplicate vendor agreements detected with VENDOR-07', priority: 'medium' },
+    { text: 'Schedule GDPR data retention audit for EU-jurisdiction contracts', priority: 'high' },
+    { text: 'Review arbitration venue clauses in cross-border agreements', priority: 'low' },
+  ];
+  const container = document.getElementById('recommendationsList');
+  container.innerHTML = recommendations.map(r => `
+    <div class="metric-row">
+      <div class="metric-label" style="max-width: 80%;">${r.text}</div>
+      <span class="badge badge-${r.priority === 'high' ? 'critical' : r.priority === 'medium' ? 'high' : 'medium'}">${r.priority}</span>
+    </div>
+  `).join('');
+}
+
+async function askCopilot() {
+  const input = document.getElementById('copilotInput');
+  const answerBox = document.getElementById('copilotAnswer');
+  const question = input.value.trim();
+  if (!question) return;
+  answerBox.textContent = 'Analyzing contract portfolio...';
+
+  try {
+    const res = await fetch(`${window.LEGALINTEL_API_URL}/copilot/ask`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-API-Key': window.LEGALINTEL_API_KEY },
+      body: JSON.stringify({ question })
+    });
+    const data = await res.json();
+    answerBox.textContent = data.answer || JSON.stringify(data);
+  } catch (err) {
+    answerBox.textContent = `Backend API not reachable at ${window.LEGALINTEL_API_URL}. Start the FastAPI gateway to enable live copilot responses.`;
+  }
+}
+
+renderHealthScore();
+renderActiveContracts();
+renderComplianceRate();
+renderExpiringContracts();
+renderVendorRiskScore();
+renderRiskChart();
+renderComplianceChart();
+renderWorkloadChart();
+renderRecommendations();
+renderRiskList();
+renderAlerts();
+</script>
+</body>
+</html>

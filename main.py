@@ -1,0 +1,1 @@
+from app.api_gateway import app
