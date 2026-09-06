@@ -169,6 +169,37 @@ canvas { max-height: 260px; }
   padding-left: 12px;
   min-height: 20px;
 }
+
+@media (max-width: 768px) {
+  header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+    padding: 20px 16px 16px 16px;
+  }
+  h1 { font-size: 20px; }
+  .status-chip { align-self: flex-start; }
+  main {
+    padding: 16px;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+  }
+  .span-2, .span-3, .span-4, .span-5, .span-6, .span-7, .span-12 {
+    grid-column: span 2;
+  }
+  .score-display { font-size: 26px !important; }
+  .panel { padding: 14px; }
+  canvas { max-height: 200px; }
+  .copilot-input-row { flex-direction: column; }
+  .copilot-input-row button { width: 100%; }
+}
+
+@media (max-width: 420px) {
+  main { grid-template-columns: 1fr; }
+  .span-2, .span-3, .span-4, .span-5, .span-6, .span-7, .span-12 {
+    grid-column: span 1;
+  }
+}
 </style>
 </head>
 <body>
